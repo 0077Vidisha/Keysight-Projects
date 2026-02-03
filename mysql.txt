@@ -1,0 +1,169 @@
+C:\>cd "C:\Program Files\MySQL\MySQL Server 8.0\bin"
+
+C:\Program Files\MySQL\MySQL Server 8.0\bin>mysql -u root -p
+Enter password: *************
+Welcome to the MySQL monitor.  Commands end with ; or \g.
+Your MySQL connection id is 202
+Server version: 9.5.0 MySQL Community Server - GPL
+
+Copyright (c) 2000, 2025, Oracle and/or its affiliates.
+
+Oracle is a registered trademark of Oracle Corporation and/or its
+affiliates. Other names may be trademarks of their respective
+owners.
+
+Type 'help;' or '\h' for help. Type '\c' to clear the current input statement.
+
+mysql> SHOW DATABASES;
++--------------------+
+| Database           |
++--------------------+
+| book_db            |
+| books_db           |
+| db_world           |
+| information_schema |
+| inventory_db       |
+| mysql              |
+| performance_schema |
+| sys                |
++--------------------+
+8 rows in set (0.00 sec)
+
+mysql> USE inventory_db;
+Database changed
+mysql> SHOW TABLES;
++------------------------+
+| Tables_in_inventory_db |
++------------------------+
+| categories             |
+| products               |
+| suppliers              |
++------------------------+
+3 rows in set (0.00 sec)
+
+mysql> SELECT * FROM products;
++------------+---------------------+-------------+-------------+--------+----------------+---------------------+
+| product_id | product_name        | category_id | supplier_id | price  | stock_quantity | created_at          |
++------------+---------------------+-------------+-------------+--------+----------------+---------------------+
+|          1 | Smartphone Model X  |           1 |           1 | 699.99 |             50 | 2026-02-02 15:14:30 |
+|          2 | Wireless Headphones |           1 |           2 | 199.99 |             30 | 2026-02-02 15:14:30 |
+|          3 | Mystery Novel       |           2 |           1 |  14.99 |            100 | 2026-02-02 15:14:30 |
+|          4 | T-shirt Classic     |           3 |           2 |   9.99 |            200 | 2026-02-02 15:14:30 |
+|          5 | E-reader            |           1 |           1 | 129.99 |             10 | 2026-02-02 15:14:30 |
++------------+---------------------+-------------+-------------+--------+----------------+---------------------+
+5 rows in set (0.00 sec)
+
+mysql> SELECT * FROM categories;
++-------------+---------------+---------------------------+
+| category_id | category_name | description               |
++-------------+---------------+---------------------------+
+|           1 | Electronics   | Devices and gadgets       |
+|           2 | Books         | Printed and digital books |
+|           3 | Clothing      | Apparel and accessories   |
++-------------+---------------+---------------------------+
+3 rows in set (0.00 sec)
+
+mysql> SELECT * FROM suppliers;
++-------------+--------------------+--------------------------+--------------+
+| supplier_id | supplier_name      | contact_email            | phone        |
++-------------+--------------------+--------------------------+--------------+
+|           1 | Best Supplier Inc. | contact@bestsupplier.com | 123-456-7890 |
+|           2 | Global Goods       | sales@globalgoods.com    | 987-654-3210 |
++-------------+--------------------+--------------------------+--------------+
+2 rows in set (0.00 sec)
+
+mysql> SELECT
+    ->     p.product_name,
+    ->     c.category_name,
+    ->     s.supplier_name
+    -> FROM products p
+    -> JOIN categories c ON p.category_id = c.category_id
+    -> JOIN suppliers s ON p.supplier_id = s.supplier_id;
++---------------------+---------------+--------------------+
+| product_name        | category_name | supplier_name      |
++---------------------+---------------+--------------------+
+| Smartphone Model X  | Electronics   | Best Supplier Inc. |
+| Wireless Headphones | Electronics   | Global Goods       |
+| E-reader            | Electronics   | Best Supplier Inc. |
+| Mystery Novel       | Books         | Best Supplier Inc. |
+| T-shirt Classic     | Clothing      | Global Goods       |
++---------------------+---------------+--------------------+
+5 rows in set (0.00 sec)
+
+mysql> SELECT * FROM products WHERE stock_quantity < 5;
+Empty set (0.00 sec)
+
+mysql> ALTER TABLE products
+    -> ADD discount_percent DECIMAL(5,2) DEFAULT 0;
+Query OK, 0 rows affected (0.03 sec)
+Records: 0  Duplicates: 0  Warnings: 0
+
+mysql> UPDATE products
+    -> SET price = price * 0.85
+    -> WHERE category_id = (
+    ->     SELECT category_id FROM categories WHERE category_name = 'Electronics'
+    -> );
+Query OK, 3 rows affected, 3 warnings (0.01 sec)
+Rows matched: 3  Changed: 3  Warnings: 3
+
+mysql> UPDATE products
+    -> SET price = price * 0.85
+    -> WHERE category_id = (
+    ->     SELECT category_id FROM categories WHERE category_name = 'Electronics'
+    -> );
+Query OK, 3 rows affected, 3 warnings (0.00 sec)
+Rows matched: 3  Changed: 3  Warnings: 3
+
+mysql> SELECT s.supplier_name, c.category_name
+    -> FROM suppliers s
+    -> LEFT JOIN categories c ON 1=1
+    -> UNION
+    -> SELECT s.supplier_name, c.category_name
+    -> FROM suppliers s
+    -> RIGHT JOIN categories c ON 1=1;
++--------------------+---------------+
+| supplier_name      | category_name |
++--------------------+---------------+
+| Best Supplier Inc. | Electronics   |
+| Best Supplier Inc. | Clothing      |
+| Best Supplier Inc. | Books         |
+| Global Goods       | Electronics   |
+| Global Goods       | Clothing      |
+| Global Goods       | Books         |
++--------------------+---------------+
+6 rows in set (0.00 sec)
+
+mysql> SELECT
+    ->     p.product_name,
+    ->     s.supplier_name,
+    ->     s.contact_email
+    -> FROM products p
+    -> JOIN suppliers s
+    ->     ON p.supplier_id = s.supplier_id
+    -> WHERE s.contact_email IS NOT NULL;
++---------------------+--------------------+--------------------------+
+| product_name        | supplier_name      | contact_email            |
++---------------------+--------------------+--------------------------+
+| Smartphone Model X  | Best Supplier Inc. | contact@bestsupplier.com |
+| Mystery Novel       | Best Supplier Inc. | contact@bestsupplier.com |
+| E-reader            | Best Supplier Inc. | contact@bestsupplier.com |
+| Wireless Headphones | Global Goods       | sales@globalgoods.com    |
+| T-shirt Classic     | Global Goods       | sales@globalgoods.com    |
++---------------------+--------------------+--------------------------+
+5 rows in set (0.00 sec)
+
+mysql> SELECT DISTINCT
+    ->     c.category_name
+    -> FROM categories c
+    -> JOIN products p
+    ->     ON c.category_id = p.category_id
+    -> JOIN suppliers s
+    ->     ON p.supplier_id = s.supplier_id
+    -> WHERE s.supplier_name = 'Global Goods';
++---------------+
+| category_name |
++---------------+
+| Electronics   |
+| Clothing      |
++---------------+
+2 rows in set (0.00 sec)
